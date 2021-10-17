@@ -37,15 +37,22 @@ AS_IF([ [[ "$gtk3_dir" != "notgiven" ]] ],
 
 # LIBRARIES
 AC_HEADER_STDC
-AC_CHECK_HEADERS([math.h string.h stdlib.h])
+AC_CHECK_HEADERS([math.h string.h stdlib.h glib.h jsoncpp/json/json.h curl/curl.h])
 
 AC_SEARCH_LIBS(sin, m, [], [AC_MSG_ERROR([No math library found!])], [])
+AC_SEARCH_LIBS(g_log, glib-2.0, [], [AC_MSG_ERROR([libglib-2.0 not found!])], [])
+AC_SEARCH_LIBS(_ZN4Json6ReaderC2Ev, jsoncpp, [], [AC_MSG_ERROR([libjsoncpp not found!])])
+AC_SEARCH_LIBS(curl_easy_send, curl, [], [AC_MSG_ERROR([libcurl not found!])])
 AC_SEARCH_LIBS(gtk_application_new, gtk-3, [], [AC_MSG_ERROR([gtk-3 library not found!])])
 AC_SEARCH_LIBS([_ZN3Gtk11Application3runEv], [gtkmm-3.0], [], [AC_MSG_ERROR([gtkmm-3.0 not found!])], [])
+AC_SEARCH_LIBS([_ZN4Glib7ustringC1EPKc], [glibmm-2.4], [], [AC_MSG_ERROR([glibmm-2.4 not found!])], [])
 
 AM_PATH_GTK_3_0([3.0.0],,AC_MSG_ERROR([Gtk+ 3.0.0 or higher required.]))
-PP=$(pkg-config --cflags-only-I --cflags-only-other gtk+-3.0)
-CXXFLAGS="${CXXFLAGS} ${PP}"
+CXXFLAGS="${CXXFLAGS} ${GTK_CFLAGS}"
+LIBS="${LIBS} ${GTK_LIBS}"
+PKG_CHECK_MODULES([GTKMM], [gtkmm-3.0 >= 3.24.2])
+CXXFLAGS="${CXXFLAGS} ${GTKMM_CFLAGS}"
+LIBS="${LIBS} ${GTKMM_LIBS}"
 
 AC_SUBST([CXXFLAGS], [$CXXFLAGS])
 AC_SUBST([LDFLAGS], [$LDFLAGS])
