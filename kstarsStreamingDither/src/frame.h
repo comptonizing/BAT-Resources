@@ -26,12 +26,15 @@ class FrmMain : public Gtk::ApplicationWindow {
         Glib::ustring m_PHDHost = "";
         std::unique_ptr<Gtk::MessageDialog> m_dialog;
         unsigned int m_PHDInstance = -1;
+        bool m_PHDConnected = false;
+        bool m_PHDError = false;
 
         void setGuidInternal();
         void setGuidPHD();
         void togglePHDConnect();
         void connectPHD();
         void disconnectPHD();
+        bool updatePHDStatus();
         void showError(Glib::ustring title, Glib::ustring message,
                 Glib::ustring secondaryMessage = "");
 };

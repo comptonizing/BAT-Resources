@@ -15,6 +15,8 @@ FrmMain::FrmMain(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder>& refG
     m_tglPHDConnect->signal_toggled().connect(sigc::mem_fun(*this, &FrmMain::togglePHDConnect));
     m_radPHD->signal_clicked().connect(sigc::mem_fun(*this, &FrmMain::setGuidPHD));
     m_radInternal->signal_clicked().connect(sigc::mem_fun(*this, &FrmMain::setGuidInternal));
+
+    Glib::signal_timeout().connect(sigc::mem_fun(*this, &FrmMain::updatePHDStatus), 200);
 }
 
 FrmMain::~FrmMain() {
@@ -22,7 +24,6 @@ FrmMain::~FrmMain() {
 }
 
 void FrmMain::togglePHDConnect() {
-    g_debug("togglePHDConnect");
     if ( m_tglPHDConnect->get_active() ) {
         connectPHD();
     } else {
@@ -33,7 +34,6 @@ void FrmMain::togglePHDConnect() {
 void FrmMain::connectPHD() {
     Glib::ustring newHost = m_entPHDHost->get_buffer()->get_text();
     unsigned int newInstance = m_spnPHDInstance->get_adjustment()->get_value();
-    g_debug("newHost: %s ; newInstance: %u", newHost.c_str(), newInstance);
     if ( newHost == Glib::ustring("") ) {
         showError("PHD2 Settings", "Hostname is empty", "Please provide a valid hostname");
         m_tglPHDConnect->set_active(false);
@@ -49,6 +49,7 @@ void FrmMain::connectPHD() {
         return;
     }
     m_lblPHDStatus->set_text("Connected");
+    m_PHDConnected = true;
     m_spnPHDInstance->set_sensitive(false);
     m_entPHDHost->set_sensitive(false);
     m_radPHD->set_sensitive(false);
@@ -66,6 +67,29 @@ void FrmMain::disconnectPHD() {
     m_radPHD->set_sensitive(true);
     m_radInternal->set_sensitive(true);
     m_tglPHDConnect->set_active(false);
+    m_PHDConnected = false;
+    m_PHDError = false;
+}
+
+bool FrmMain::updatePHDStatus() {
+    g_info("Updating PHD status");
+    if ( m_phd == nullptr || m_PHDError ) {
+        return true;
+    }
+    if ( not m_PHDConnected ) {
+        m_lblPHDStatus->set_text("Not connected");
+        return true;
+    }
+    double avgDist;
+    std::string appState;
+    if ( ! m_phd->GetStatus(&appState, &avgDist) ) {
+        showError("PHD2 Error", m_phd->LastError());
+        m_PHDError = true;
+        m_lblPHDStatus->set_text("Error");
+        return true;
+    }
+    m_lblPHDStatus->set_text(appState);
+    return true;
 }
 
 void FrmMain::showError(Glib::ustring title, Glib::ustring message,
